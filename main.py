@@ -29,32 +29,34 @@ while True:
     if len(lmList) != 0:
         x1, y1 = lmList[8]
         x2, y2 = lmList[12]
+    try:
+        # Check fingers up
+        fingers = detector.fingersUp()
 
-    # Check fingers up
-    fingers = detector.fingersUp()
+        cv2.rectangle(img, (frameR, frameR), (wCam - frameR, hCam - frameR), (0, 0, 255), 2)
+        # Moving Mode: Only index finger
+        if fingers[1] == 1 and fingers[2] == 0:
 
-    cv2.rectangle(img, (frameR, frameR), (wCam - frameR, hCam - frameR), (0, 0, 255), 2)
-    # Moving Mode: Only index finger
-    if fingers[1] == 1 and fingers[2] == 0:
+            x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr))
+            y3 = np.interp(y1, (frameR, hCam - frameR), (0, hScr))
 
-        x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr))
-        y3 = np.interp(y1, (frameR, hCam - frameR), (0, hScr))
+            # smoothening
+            clocX = plocX + (x3 - plocX) / smoothening
+            clocY = plocY + (y3 - plocY) / smoothening
 
-        # smoothening
-        clocX = plocX + (x3 - plocX) / smoothening
-        clocY = plocY + (y3 - plocY) / smoothening
+            # move cursor
+            autopy.mouse.move(wScr - x3, y3)
+            cv2.circle(img, (x1, y1), 15, (255, 0, 0), cv2.FILLED)
+            plocX, plocY = clocX, clocY
 
-        # move cursor
-        autopy.mouse.move(wScr - x3, y3)
-        cv2.circle(img, (x1, y1), 15, (255, 0, 0), cv2.FILLED)
-        plocX, plocY = clocX, clocY
-
-    # Click Mode: Both index and middle finger up
-    if fingers[1] == 1 and fingers[2] == 1:
-        length, img, lineInfo = detector.findDistance(8, 12, img)
-        if length < 40:
-            cv2.circle(img, (lineInfo[4], lineInfo[5]), 10, (0, 255, 0), cv2.FILLED)
-            autopy.mouse.click()
+        # Click Mode: Both index and middle finger up
+        if fingers[1] == 1 and fingers[2] == 1:
+            length, img, lineInfo = detector.findDistance(8, 12, img)
+            if length < 40:
+                cv2.circle(img, (lineInfo[4], lineInfo[5]), 10, (0, 255, 0), cv2.FILLED)
+                autopy.mouse.click()
+    except:
+        pass
     # Flip image
     img = cv2.flip(img, 1)
 
