@@ -28,7 +28,6 @@ finalText = ""
 
 keyboard = Controller()
 
-
 def drawAll(img, buttonlist):
     for button in buttonlist:
         x, y = button.pos
