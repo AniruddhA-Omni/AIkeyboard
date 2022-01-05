@@ -2,19 +2,20 @@ import cv2
 import numpy as np
 from cvzone.HandTrackingModule import HandDetector
 import time
-import autopy
+import pyautogui as gui
+
 
 ########
 wCam, hCam = 1280, 720
 frameR = 150  # Frame reduction
-smoothening = 10
+smoothening = 20
 ########
 cap = cv2.VideoCapture(0)
 cap.set(3, wCam)
 cap.set(4, hCam)
 
 detector = HandDetector(detectionCon=0.8, maxHands=1)
-wScr, hScr = autopy.screen.size()
+wScr, hScr = gui.size()
 x1, y1 = 0, 0
 
 pTime = 0
@@ -35,8 +36,7 @@ while True:
 
         cv2.rectangle(img, (frameR, frameR), (wCam - frameR, hCam - frameR), (0, 0, 255), 2)
         # Moving Mode: Only index finger
-        if fingers[1] == 1 and fingers[2] == 0:
-
+        if fingers == [0, 1, 0, 0, 0]:
             x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr))
             y3 = np.interp(y1, (frameR, hCam - frameR), (0, hScr))
 
@@ -45,16 +45,46 @@ while True:
             clocY = plocY + (y3 - plocY) / smoothening
 
             # move cursor
-            autopy.mouse.move(wScr - x3, y3)
+            # print(wScr - x3, y3)
+            gui.moveTo(wScr - clocX, clocY)
             cv2.circle(img, (x1, y1), 15, (255, 0, 0), cv2.FILLED)
             plocX, plocY = clocX, clocY
 
-        # Click Mode: Both index and middle finger up
-        if fingers[1] == 1 and fingers[2] == 1:
+        # Scroll Mode: 1st and 2nd finger up
+        '''if fingers == [0, 1, 1, 0, 0]:
+            x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr))
+            y3 = np.interp(y1, (frameR, hCam - frameR), (0, hScr))
+
+            # smoothening
+            clocX = plocX + (x3 - plocX) / smoothening
+            clocY = plocY + (y3 - plocY) / smoothening
+
+            # move cursor
+            # print(wScr - x3, y3)
+            gui.scroll(plocY - clocY)
+            # cv2.circle(img, (x1, y1), 15, (255, 0, 0), cv2.FILLED)
+            plocX, plocY = clocX, clocY'''
+
+        # Left Click Mode: 1st, 2nd and 3rd finger up
+        if fingers == [0, 1, 1, 1, 0]:
             length, img, lineInfo = detector.findDistance(8, 12, img)
             if length < 40:
                 cv2.circle(img, (lineInfo[4], lineInfo[5]), 10, (0, 255, 0), cv2.FILLED)
-                autopy.mouse.click()
+                gui.click()
+
+        # Right Click Mode: 1st, 2nd, 3rd and 4th finger up
+        if fingers == [0, 1, 1, 1, 1]:
+            length, img, lineInfo = detector.findDistance(8, 12, img)
+            if length < 40:
+                cv2.circle(img, (lineInfo[4], lineInfo[5]), 10, (0, 255, 0), cv2.FILLED)
+                gui.click(button='right')
+
+        # Zoom mode: thumb and 1st finger up
+        if fingers == [1, 1, 0, 0, 0]:
+            lengthZ, img, lineInfo = detector.findDistance(4, 8, img)
+            new_length = np.interp(lengthZ, (25, 350), (0, 100))
+            # smoothness
+            new_length = smoothening * round(new_length/smoothening)
     except:
         pass
     # Flip image
